@@ -5,58 +5,38 @@
   const audio = new Audio(SOUND_URL);
   audio.preload = "auto";
 
-  let audioUnlocked = false;
-
-  function unlockAudio() {
-    if (audioUnlocked) return;
-
-    audio.play()
-      .then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-        audioUnlocked = true;
-        console.log("IRL audio unlocked");
-      })
-      .catch(() => {});
-  }
-
-  document.addEventListener("click", unlockAudio, { once: true });
-  document.addEventListener("touchstart", unlockAudio, { once: true });
-
   function playAlert() {
     audio.currentTime = 0;
     audio.play().catch(err => {
-      console.log("IRL alert audio blocked:", err);
+      console.log("Sound blockiert:", err);
     });
   }
 
-  const socket = new WebSocket(
-    "wss://io.socialstream.ninja/join/" + SESSION + "/9/10"
-  );
+  function connect() {
+    const socket = new WebSocket("wss://io.socialstream.ninja:443");
 
-  socket.addEventListener("open", () => {
-    console.log("IRL alert websocket connected");
-  });
+    socket.onopen = () => {
+      socket.send(JSON.stringify({
+        join: SESSION,
+        out: 3,
+        in: 4
+      }));
 
-  socket.addEventListener("message", event => {
-    if (!event.data) return;
+      console.log("IRL WebSocket verbunden");
+    };
 
-    let data;
+    socket.onmessage = event => {
+      console.log("IRL empfangen:", event.data);
 
-    try {
-      data = JSON.parse(event.data);
-    } catch {
-      data = event.data;
-    }
+      if (event.data && event.data.includes("IRL_KOFI_ALERT")) {
+        playAlert();
+      }
+    };
 
-    const text =
-      typeof data === "string"
-        ? data
-        : JSON.stringify(data);
+    socket.onclose = () => {
+      setTimeout(connect, 2000);
+    };
+  }
 
-    if (text.includes("IRL_KOFI_ALERT")) {
-      console.log("Ko-fi alert received");
-      playAlert();
-    }
-  });
+  connect();
 })();
