@@ -1,55 +1,62 @@
 (() => {
-
-  const ALERT_MARKER = "IRL_KOFI_ALERT";
+  const SESSION = "bQJTDhLf84";
   const SOUND_URL = "https://philliefiffla.github.io/ssn-irl-alerts/bro.mp3";
 
   const audio = new Audio(SOUND_URL);
   audio.preload = "auto";
 
+  let audioUnlocked = false;
+
+  function unlockAudio() {
+    if (audioUnlocked) return;
+
+    audio.play()
+      .then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+        audioUnlocked = true;
+        console.log("IRL audio unlocked");
+      })
+      .catch(() => {});
+  }
+
+  document.addEventListener("click", unlockAudio, { once: true });
+  document.addEventListener("touchstart", unlockAudio, { once: true });
+
   function playAlert() {
     audio.currentTime = 0;
-
-    audio.play().catch(error => {
-      console.log("Alert-Sound konnte nicht abgespielt werden:", error);
+    audio.play().catch(err => {
+      console.log("IRL alert audio blocked:", err);
     });
   }
 
-  function containsAlertMarker(data) {
+  const socket = new WebSocket(
+    "wss://io.socialstream.ninja/join/" + SESSION + "/9/10"
+  );
+
+  socket.addEventListener("open", () => {
+    console.log("IRL alert websocket connected");
+  });
+
+  socket.addEventListener("message", event => {
+    if (!event.data) return;
+
+    let data;
+
     try {
-      if (typeof data === "string") {
-        return data.includes(ALERT_MARKER);
-      }
-
-      return JSON.stringify(data).includes(ALERT_MARKER);
-
-    } catch (e) {
-      return false;
+      data = JSON.parse(event.data);
+    } catch {
+      data = event.data;
     }
-  }
 
-  if (typeof window.processInput === "function") {
+    const text =
+      typeof data === "string"
+        ? data
+        : JSON.stringify(data);
 
-    const originalProcessInput = window.processInput;
-
-    window.processInput = function(data) {
-
-      if (containsAlertMarker(data)) {
-        console.log("IRL Ko-fi Alert erkannt");
-        playAlert();
-
-        // Nachricht NICHT an SSN weiterreichen
-        // Dadurch erscheint sie nicht im Chat
-        // und SSN kann keinen eigenen Beep dafür auslösen.
-        return;
-      }
-
-      return originalProcessInput.apply(this, arguments);
-    };
-
-    console.log("IRL Alert-System aktiv");
-
-  } else {
-    console.log("processInput wurde nicht gefunden");
-  }
-
+    if (text.includes("IRL_KOFI_ALERT")) {
+      console.log("Ko-fi alert received");
+      playAlert();
+    }
+  });
 })();
