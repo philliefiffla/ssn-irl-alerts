@@ -5,8 +5,26 @@
   const audio = new Audio(SOUND_URL);
   audio.preload = "auto";
 
+  // Audio auf iPhone/Safari einmal freischalten
+  function unlockAudio() {
+    audio.muted = true;
+
+    audio.play().then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+      console.log("IRL Audio freigeschaltet");
+    }).catch(() => {
+      audio.muted = false;
+    });
+  }
+
+  document.addEventListener("touchstart", unlockAudio, { once: true });
+  document.addEventListener("click", unlockAudio, { once: true });
+
   function playAlert() {
     audio.currentTime = 0;
+
     audio.play().catch(err => {
       console.log("Sound blockiert:", err);
     });
