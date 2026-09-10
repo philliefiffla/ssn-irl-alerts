@@ -1,7 +1,7 @@
 (() => {
   const ALERT_TEXT = "IRL_KOFI_ALERT";
   const SOUND_URL =
-    "https://fileuploads.socialstream.ninja/media/e0562c3b-0e42-4f40-bebf-4ceb04c3126e";
+    "https://philliefiffla.github.io/ssn-irl-alerts/bro.mp3";
 
   const audio = new Audio(SOUND_URL);
   audio.preload = "auto";
